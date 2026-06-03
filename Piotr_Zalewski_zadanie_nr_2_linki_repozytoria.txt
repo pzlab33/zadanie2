@@ -1,0 +1,4 @@
+Piotr Zalewski I1S6 TI 6.2 Technologie chmurowe
+Linki do repozytoriów z zadaniem nr 2:
+DockerHub: https://hub.docker.com/r/pzlab33/zadanie2-cache
+GitHub: https://github.com/pzlab33/zadanie2

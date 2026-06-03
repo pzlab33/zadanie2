@@ -1,0 +1,27 @@
+# Obraz bazowy z Node.js i Alpine
+FROM node:24-alpine
+
+# Metadane zgodnie ze standardem OCI
+LABEL org.opencontainers.image.authors="Piotr Zalewski"
+
+# Usunięcie npm (Hardening) - robimy to jako root
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /opt/yarn*
+
+# Kopiowanie kodu aplikacji
+COPY --chown=node:node server.js /home/node/server.js
+
+# Dobra praktyka: uruchamianie jako użytkownik bez uprawnień roota
+USER node
+
+# HEALTHCHECK (sprawdzenie czy serwer odpowiada)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
+
+# Dokumentacja portu
+EXPOSE 8080
+
+# Uruchomienie aplikacji
+CMD ["node", "/home/node/server.js"]

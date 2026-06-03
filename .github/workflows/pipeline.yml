@@ -1,0 +1,81 @@
+name: Zadanie 2 - Pipeline CI (GHCR + DockerHub Cache + CVE)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+    - 'v*' # Uruchomienie po wypchnięciu tagu wersji, np. v1.0.0
+
+jobs:
+  ci_pipeline:
+    name: Build, Scan CVE and Push to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Wymagane uprawnienie do zapisu w ghcr.io
+
+    steps:
+      - name: Check out the source repo
+        uses: actions/checkout@v6
+
+      - name: QEMU set-up
+        uses: docker/setup-qemu-action@v3
+
+      - name: Buildx set-up
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub (for Cache storage)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry (Target Registry)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata definitions for GHCR
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: latest=true
+          tags: |
+            type=sha,priority=100,prefix=sha-,format=short
+            type=semver,priority=200,pattern={{version}}
+
+      # KROK TESTOWY: Budujemy obraz lokalnie dla architektury amd64, aby przekazać go do skanera CVE
+      - name: Build local image for CVE testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile_zadanie_nr_1
+          platforms: linux/amd64
+          load: true # Ładuje obraz bezpośrednio do lokalnego demona Docker runnera
+          tags: local-image:test
+          cache-from: type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/zadanie2-cache:latest
+
+      # TEST CVE: Skanowanie obrazu za pomocą Trivy przed wysłaniem na GHCR
+      - name: Run Trivy CVE Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'local-image:test'
+          format: 'table'
+          exit-code: '1' # Zwraca błąd (przerywa pipeline) w przypadku wykrycia zagrożeń
+          ignore-unfixed: false
+          severity: 'CRITICAL,HIGH'
+
+      # FINALNY KROK: Budowanie wieloarchitekturowe i wypchnięcie do GHCR (tylko gdy Trivy przejdzie pomyślnie)
+      - name: Build and push Multi-Platform Image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile_zadanie_nr_1
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/zadanie2-cache:latest
+          cache-to: type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/zadanie2-cache:latest,mode=max
