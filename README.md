@@ -95,3 +95,12 @@ Działanie łańcucha zostało przetestowane poprzez nadanie i wypchnięcie tagu
 1. **Zakładka Actions:** Potok wykonał się bezbłędnie (wszystkie etapy mają zielony status). Krok Trivy nie zablokował budowania, ponieważ obraz bazowy Alpine okazał się bezpieczny.
 2. **GitHub Packages (ghcr.io):** Na koncie GitHub w sekcji *Packages* pojawił się gotowy publiczny obraz, obsługujący jednocześnie dwie architektury (`linux/amd64` oraz `linux/arm64`) oznaczony tagami `v1.0.0`, `latest` oraz `sha-...`.
 3. **DockerHub Cache:** Na koncie DockerHub w repozytorium `pzlab33/zadanie2-cache` zostały pomyślnie zapisane warstwy cache, które przyspieszą każde kolejne uruchomienie potoku.
+
+### Bibliografia i źródła:
+
+1. Oficjalna dokumentacja systemu Docker Build: *Registry cache backend* – https://docs.docker.com/build/cache/backends/registry/
+2. Dokumentacja Docker i GitHub Actions: *Cache management with GitHub Actions* – https://docs.docker.com/build/ci/github-actions/cache/
+3. Oficjalny przewodnik Docker: *Docker Build GitHub Actions* – https://docs.docker.com/build/ci/github-actions/
+4. Oficjalna specyfikacja standardu wersjonowania: *Semantic Versioning 2.0.0* – https://semver.org/
+5. Przewodnik Docker dotyczący automatyzacji CI/CD: *Manage tags and labels with GitHub Actions* – https://docs.docker.com/build/ci/github-actions/manage-tags-labels/
+6. Specyfikacja techniczna narzędzia Docker Metadata: *Docker Metadata Action for GitHub Actions* – https://github.com/docker/metadata-action
